@@ -1,25 +1,102 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
+title: "Peer Assignment_1 (RR)"
+author: "Hitaxi"
+date: "24/08/2020"
+output: html_document
 ---
 
+### Loading and Preprocessing Data
 
-## Loading and preprocessing the data
+```{r, cache=TRUE}
+activityData <- read.csv("activity.csv")
+summary(activityData)
+
+```
+```{r}
+names(activityData)
+```
+```{r}
+head(activityData)
+```
+
+### Mean Total number of steps taken per day
+#### Calculate total number number of steps taken per day and plot histogram
+```{r, cache=TRUE}
+stepsPerDay <- aggregate(steps ~ date, activityData, sum, na.rm=TRUE)
+hist(stepsPerDay$steps)
+```
+#### Calculating the mean and meadian 
+```{r, cache=TRUE}
+meanStepsPerDay <- mean(stepsPerDay)
+meanStepsPerDay
+```
+
+### Average activity daily pattern
+```{r, cache=TRUE}
+stepsPerInterval <- aggregate(steps ~ interval, data= activityData, mean, na.rm=TRUE )
+plot(steps~interval, data=stepsPerInterval, type="l")
+```
+#### Calculating the 5-min interval maximum steps
+```{r, cache=TRUE}
+intervalWithMaxSteps <- stepsPerInterval[which.max(stepsPerInterval$steps),]$interval
+intervalWithMaxSteps
+```
+### Imputing the missing values
+```{r, cache=TRUE}
+totalMissingValues <- sum(is.na(activityData$steps))
+totalMissingValues
+```
+#### Filling the missing values with the mean of the data
+```{r, cache=TRUE}
+getMeanStepsPerInterval <- function(interval) {
+  stepsPerInterval[stepsPerInterval$interval==interval,]$steps
+}
+activityData_1 <- activityData
+for(i in 1:nrow(activityData)) {
+  if(is.na(activityData_1[i,]$steps)) {
+    activityData_1[i,]$steps <- getMeanStepsPerInterval(activityData_1[i,]$interval)
+    }
+  }
+```
+#### Histogram of total number of steps Per Day for new dataset
+```{r, cache=TRUE}
+totalStepsPerDayNoNA <- aggregate(steps ~date, data=activityData_1, sum)
+hist(totalStepsPerDayNoNA$steps)
+```
+```{r, cache=TRUE}
+meanSteps <- mean(totalStepsPerDayNoNA$steps)
+medianSteps <- median(totalStepsPerDayNoNA$steps)
+```
+### Difference in activity patterns between and Weekdays and Weekends
+```{r, cache=TRUE}
+activityData_1$date <- as.Date(strptime(activityData_1$date, format = "%Y-%m-%d"))
+activityData_1$day <- weekdays(activityData_1$date)
+for (i in 1:nrow(activityData_1)) {
+  if(activityData_1[i,]$day %in% c('Saturday','Sunday')) {
+   activityData_1[i,]$day <- "weekend"
+  }
+  else {
+    activityData_1[i,]$day <- "weekday"
+  }
+}
+stepsbyDay <- aggregate(activityData_1$steps ~ activityData_1$interval + activityData_1$day, activityData_1,mean)
+```
+#### TO make plot containing the time-series
+```{r, cache=TRUE}
+names(stepsbyDay) <- c("interval","day","steps")
+library(lattice)
+xyplot(steps ~ interval |day, stepsbyDay, type="l", layout=c(1,2), xlab="Interval", ylab="Number of steps")
+```
 
 
 
-## What is mean total number of steps taken per day?
 
 
 
-## What is the average daily activity pattern?
 
 
 
-## Imputing missing values
 
 
 
-## Are there differences in activity patterns between weekdays and weekends?
+
